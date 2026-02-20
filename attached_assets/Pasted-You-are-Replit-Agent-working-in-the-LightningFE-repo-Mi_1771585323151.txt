@@ -1,0 +1,155 @@
+You are Replit Agent working in the LightningFE repo.
+
+Mission
+
+Implement LightningFE for Minecraft 1.21.1 on NeoForge 21.1.219 (Java 21).
+
+Augment the vanilla Lightning Rod so that when it is struck by lightning it emits a massive, single tick FE burst to adjacent blocks.
+
+No energy storage. No buffering. Any unaccepted FE is discarded immediately.
+
+Do not replace the Lightning Rod block. Do not add a BlockEntity. Do not use mixins.
+
+Hard rules
+
+Put all documentation in docs/, not mods/ and not the project root.
+
+Small commits, incremental steps. Do not implement everything at once.
+
+Server authoritative only. No client side logic beyond what is required for loading.
+
+No new blocks, items, worldgen, UI, config screens in Phase 1.
+
+FE only. Use NeoForge Energy capability only.
+
+Phase 0: Repo setup and docs
+
+Create these files under docs/ exactly as specified:
+
+docs/PORTING.md
+
+docs/DECISIONS.md
+
+docs/NEXT.md
+
+docs/LOG.md (empty except a header)
+
+docs/PROMPTS.md (empty except a header)
+
+Ensure the content matches the LightningFE Architectural Spec (Project Name, targets, objective, non-goals, behaviour, default fePerStrike = 20,000,000 FE, acceptance criteria, decisions). Do not invent new scope.
+
+Stop condition for Phase 0
+
+You have created the docs/ files above and nothing else.
+
+Output a short summary of what you created and the exact file paths.
+
+Phase 1: NeoForge mod skeleton (no behaviour yet)
+After Phase 0 is complete, proceed to Phase 1:
+
+Create a minimal NeoForge mod skeleton that loads in dev:
+
+mod metadata (mods.toml or equivalent for this NeoForge version)
+
+main mod class with a logger
+
+gradle configuration consistent with NeoForge 1.21.1 and Java 21
+
+Add a single log line on common setup to prove the mod is loading.
+
+Do not register any content.
+
+Do not implement lightning behaviour yet.
+
+Validation for Phase 1
+
+Run the dev client or a build task and confirm the mod loads without warnings or errors.
+
+Capture the relevant console line showing the mod loaded.
+
+Stop condition for Phase 1
+
+Mod loads successfully and logs once.
+
+No gameplay changes.
+
+Output the commands you ran and the exact log line you saw.
+
+Phase 2: Lightning strike FE burst behaviour
+Only after Phase 1 is confirmed, implement the core behaviour:
+
+Implementation requirements
+
+Subscribe to the correct NeoForge event that fires when lightning strikes a block or when a Lightning Rod is hit.
+
+Confirm the struck position contains a Lightning Rod block.
+
+Only execute on the server (Level is not client side).
+
+Attempt to push fePerStrike = 20,000,000 FE into adjacent blocks in the same tick.
+
+For each of the 6 directions:
+
+Get the neighbour BlockEntity (if any).
+
+Query the NeoForge Energy capability on the neighbour for the face pointing back toward the rod.
+
+Call receiveEnergy(remaining, false).
+
+Subtract accepted from remaining.
+
+Continue until remaining is 0 or all sides processed.
+
+Discard any remaining FE after checking all sides.
+
+Do not store FE anywhere. No persistent state.
+
+Instrumentation
+
+Add debug logging behind a boolean constant (e.g., DEBUG = false) that can be toggled.
+
+When DEBUG is true, log:
+
+strike position
+
+total FE attempted
+
+total FE accepted
+
+remaining FE discarded
+
+per-side accepted values
+
+Validation for Phase 2
+
+Provide a simple test plan in docs/LOG.md:
+
+Place lightning rod adjacent to at least one FE battery.
+
+Trigger lightning naturally and via channeling trident during a thunderstorm.
+
+Observe battery charge increase.
+
+Test with no adjacent FE blocks (ensure no crash).
+
+Test multiple adjacent FE blocks (ensure distribution occurs in order of faces checked).
+
+Stop condition for Phase 2
+
+Build passes.
+
+Behaviour works in dev client.
+
+Docs updated (docs/LOG.md contains test notes).
+
+Output a concise summary of files changed and key implementation points.
+
+Output format requirements (every phase)
+
+List files created/modified with paths.
+
+List commands run and outcomes.
+
+Do not paste huge logs. Include only the single confirming line(s).
+
+Begin with Phase 0 now.
