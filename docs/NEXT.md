@@ -1,2 +1,2 @@
 # NEXT
-Balance and config knobs.
+Balance tuning and optional configuration (deferred).

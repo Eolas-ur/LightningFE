@@ -1,6 +1,6 @@
-package au.com.camparsfield.lightningfe.event;
+package au.com.lightningfe.event;
 
-import au.com.camparsfield.lightningfe.LightningFE;
+import au.com.lightningfe.LightningFE;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -13,7 +13,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.energy.IEnergyStorage;
-import net.neoforged.neoforge.event.level.GameEventEvent;
+import net.neoforged.neoforge.event.VanillaGameEvent;
 import org.slf4j.Logger;
 
 import java.util.HashSet;
@@ -26,25 +26,26 @@ public class LightningEnergyEvents {
     private static final int FE_PER_STRIKE = 20_000_000;
     
     private static long lastStrikeTick = -1;
-    private static final Set<BlockPos> strikePositionsThisTick = new HashSet<>();
+    private static final Set<String> strikeKeysThisTick = new HashSet<>();
 
     @SubscribeEvent
-    public static void onGameEvent(GameEventEvent event) {
+    public static void onVanillaGameEvent(VanillaGameEvent event) {
         if (event.getLevel().isClientSide() || !(event.getLevel() instanceof Level level)) {
             return;
         }
 
-        if (event.getEvent() == GameEvent.LIGHTNING_STRIKE) {
+        if (event.getVanillaEvent() == GameEvent.LIGHTNING_STRIKE) {
             long currentTick = level.getGameTime();
             
             if (currentTick != lastStrikeTick) {
                 lastStrikeTick = currentTick;
-                strikePositionsThisTick.clear();
+                strikeKeysThisTick.clear();
             }
 
-            BlockPos strikePos = BlockPos.containing(event.getPosition());
+            BlockPos strikePos = BlockPos.containing(event.getEventPosition());
+            String key = level.dimension().location() + ":" + strikePos.asLong();
             
-            if (!strikePositionsThisTick.add(strikePos)) {
+            if (!strikeKeysThisTick.add(key)) {
                 return; // Already processed a strike at this position in this tick
             }
 
