@@ -4,33 +4,49 @@ import au.com.camparsfield.lightningfe.LightningFE;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.gameevent.GameEvent;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.energy.IEnergyStorage;
-import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
+import net.neoforged.neoforge.event.level.GameEventEvent;
 import org.slf4j.Logger;
+
+import java.util.HashSet;
+import java.util.Set;
 
 @EventBusSubscriber(modid = LightningFE.MODID)
 public class LightningEnergyEvents {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final boolean DEBUG = false;
     private static final int FE_PER_STRIKE = 20_000_000;
+    
+    private static long lastStrikeTick = -1;
+    private static final Set<BlockPos> strikePositionsThisTick = new HashSet<>();
 
     @SubscribeEvent
-    public static void onLightningStrike(EntityJoinLevelEvent event) {
-        if (event.getLevel().isClientSide()) {
+    public static void onGameEvent(GameEventEvent event) {
+        if (event.getLevel().isClientSide() || !(event.getLevel() instanceof Level level)) {
             return;
         }
 
-        if (event.getEntity() instanceof LightningBolt lightningBolt) {
-            Level level = event.getLevel();
-            BlockPos strikePos = lightningBolt.blockPosition();
+        if (event.getEvent() == GameEvent.LIGHTNING_STRIKE) {
+            long currentTick = level.getGameTime();
+            
+            if (currentTick != lastStrikeTick) {
+                lastStrikeTick = currentTick;
+                strikePositionsThisTick.clear();
+            }
+
+            BlockPos strikePos = BlockPos.containing(event.getPosition());
+            
+            if (!strikePositionsThisTick.add(strikePos)) {
+                return; // Already processed a strike at this position in this tick
+            }
 
             BlockPos rodPos = null;
             if (isLightningRod(level.getBlockState(strikePos))) {
