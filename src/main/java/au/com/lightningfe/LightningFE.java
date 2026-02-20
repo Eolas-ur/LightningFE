@@ -1,4 +1,4 @@
-package au.com.camparsfield.lightningfe;
+package au.com.lightningfe;
 
 import org.slf4j.Logger;
 import com.mojang.logging.LogUtils;
