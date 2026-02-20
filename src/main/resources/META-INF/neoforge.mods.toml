@@ -1,0 +1,26 @@
+modLoader="javafml"
+loaderVersion="[21,)"
+license="MIT"
+
+[[mods]]
+modId="lightningfe"
+version="0.1.0"
+displayName="LightningFE"
+authors="camparsfield"
+description='''
+Augment the vanilla Lightning Rod so that when it is struck by lightning it emits a massive, single tick FE burst to adjacent blocks.
+'''
+
+[[dependencies.lightningfe]]
+    modId="neoforge"
+    type="required"
+    versionRange="[21.1,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.lightningfe]]
+    modId="minecraft"
+    type="required"
+    versionRange="[1.21.1,1.22)"
+    ordering="NONE"
+    side="BOTH"
