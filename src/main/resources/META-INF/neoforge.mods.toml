@@ -4,11 +4,14 @@ license="MIT"
 
 [[mods]]
 modId="lightningfe"
-version="0.1.0"
+version="${file.jarVersion}"
 displayName="LightningFE"
-authors="camparsfield"
+authors="Eolas-Ur"
 description='''
-Augment the vanilla Lightning Rod so that when it is struck by lightning it emits a massive, single tick FE burst to adjacent blocks.
+LightningFE augments the vanilla Lightning Rod.
+When struck by lightning, the rod emits a single-tick burst of 20,000,000 FE into adjacent blocks.
+No storage. No buffering. Excess energy is discarded.
+Compatible with any mod using NeoForge Energy capability.
 '''
 
 [[dependencies.lightningfe]]
