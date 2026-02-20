@@ -7,7 +7,7 @@ vite.config.ts.*
 
 # Replit & Attached Items
 .replit
+replit.md
 replit.nix
 attached_assets/
-attached_items/
 .upm/
