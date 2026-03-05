@@ -18,3 +18,5 @@
 ## Phase 4 Updates
 - Upgraded target platform to Minecraft 1.21.11 and NeoForge 21.11.38-beta.
 - Bumped version to 0.2.0.
+- Migrated code to the new `net.neoforged.neoforge.transfer.energy.EnergyHandler` API and `Transaction` system.
+- Replaced deprecated `level.dimension().location()` usage with `level.dimension().toString()`.

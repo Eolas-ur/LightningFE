@@ -12,9 +12,10 @@ import net.minecraft.world.level.gameevent.GameEvent;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.energy.IEnergyStorage;
+import net.neoforged.neoforge.transfer.energy.EnergyHandler;
 import net.neoforged.neoforge.event.VanillaGameEvent;
 import org.slf4j.Logger;
+import net.neoforged.neoforge.transfer.Transaction;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -43,7 +44,7 @@ public class LightningEnergyEvents {
             }
 
             BlockPos strikePos = BlockPos.containing(event.getEventPosition());
-            String key = level.dimension().location() + ":" + strikePos.asLong();
+            String key = level.dimension().toString() + ":" + strikePos.asLong();
             
             if (!strikeKeysThisTick.add(key)) {
                 return; // Already processed a strike at this position in this tick
@@ -79,12 +80,17 @@ public class LightningEnergyEvents {
             BlockPos neighborPos = rodPos.relative(dir);
             BlockEntity be = level.getBlockEntity(neighborPos);
             if (be != null) {
-                IEnergyStorage energyStorage = level.getCapability(Capabilities.EnergyStorage.BLOCK, neighborPos, level.getBlockState(neighborPos), be, dir.getOpposite());
-                if (energyStorage != null) {
-                    int accepted = energyStorage.receiveEnergy(remaining, false);
-                    remaining -= accepted;
-                    totalAccepted += accepted;
-                    acceptedPerSide[i] = accepted;
+                EnergyHandler handler = level.getCapability(Capabilities.Energy.BLOCK, neighborPos, level.getBlockState(neighborPos), be, dir.getOpposite());
+                if (handler != null) {
+                    try (var tx = Transaction.openRoot()) {
+                        long accepted = handler.insert(remaining, tx);
+                        if (accepted > 0) {
+                            tx.commit();
+                            remaining -= (int) accepted;
+                            totalAccepted += (int) accepted;
+                            acceptedPerSide[i] = (int) accepted;
+                        }
+                    }
                 }
             }
         }
