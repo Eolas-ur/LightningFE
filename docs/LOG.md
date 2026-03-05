@@ -9,4 +9,14 @@
 - Package refactor completed (personal identifier removed).
 - Event migrated to VanillaGameEvent.
 - Duplicate guard made dimension-safe.
-- Confirmed still single-tick and lossy.
+## Phase 3 Updates
+- Added MIT LICENSE.
+- Added comprehensive README.md.
+- Updated `neoforge.mods.toml` and `gradle.properties` metadata for release.
+- Locked version to 0.1.0 using dynamically linked property `${file.jarVersion}`.
+
+## Phase 4 Updates
+- Upgraded target platform to Minecraft 1.21.11 and NeoForge 21.11.38-beta.
+- Bumped version to 0.2.0.
+- Migrated code to the new `net.neoforged.neoforge.transfer.energy.EnergyHandler` API and `Transaction` system.
+- Replaced deprecated `level.dimension().location()` usage with `level.dimension().toString()`.

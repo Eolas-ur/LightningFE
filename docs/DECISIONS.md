@@ -7,7 +7,7 @@ LightningFE
 Augment the vanilla Lightning Rod so that when it is struck by lightning it emits a massive, single tick FE burst to adjacent blocks.
 
 ## Targets
-Minecraft 1.21.1 on NeoForge 21.1.219 (Java 21).
+Minecraft 1.21.11 on NeoForge 21.11.38-beta (Java 21).
 
 ## Non-goals
 - No energy storage.
