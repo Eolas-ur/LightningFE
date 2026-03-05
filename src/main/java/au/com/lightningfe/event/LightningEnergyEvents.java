@@ -12,8 +12,9 @@ import net.minecraft.world.level.gameevent.GameEvent;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.energy.IEnergyStorage;
 import net.neoforged.neoforge.event.VanillaGameEvent;
+import net.neoforged.neoforge.transfer.energy.EnergyHandler;
+import net.neoforged.neoforge.transfer.transaction.Transaction;
 import org.slf4j.Logger;
 
 import java.util.HashSet;
@@ -23,8 +24,10 @@ import java.util.Set;
 public class LightningEnergyEvents {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final boolean DEBUG = false;
-    private static final int FE_PER_STRIKE = 20_000_000;
-    
+
+    // 20 million FE per strike
+    private static final long FE_PER_STRIKE = 20_000_000L;
+
     private static long lastStrikeTick = -1;
     private static final Set<String> strikeKeysThisTick = new HashSet<>();
 
@@ -34,31 +37,33 @@ public class LightningEnergyEvents {
             return;
         }
 
-        if (event.getVanillaEvent() == GameEvent.LIGHTNING_STRIKE) {
-            long currentTick = level.getGameTime();
-            
-            if (currentTick != lastStrikeTick) {
-                lastStrikeTick = currentTick;
-                strikeKeysThisTick.clear();
-            }
+        if (event.getVanillaEvent() != GameEvent.LIGHTNING_STRIKE) {
+            return;
+        }
 
-            BlockPos strikePos = BlockPos.containing(event.getEventPosition());
-            String key = level.dimension().location() + ":" + strikePos.asLong();
-            
-            if (!strikeKeysThisTick.add(key)) {
-                return; // Already processed a strike at this position in this tick
-            }
+        long currentTick = level.getGameTime();
+        if (currentTick != lastStrikeTick) {
+            lastStrikeTick = currentTick;
+            strikeKeysThisTick.clear();
+        }
 
-            BlockPos rodPos = null;
-            if (isLightningRod(level.getBlockState(strikePos))) {
-                rodPos = strikePos;
-            } else if (isLightningRod(level.getBlockState(strikePos.below()))) {
-                rodPos = strikePos.below();
-            }
+        BlockPos strikePos = BlockPos.containing(event.getEventPosition());
 
-            if (rodPos != null) {
-                distributeEnergy(level, rodPos);
-            }
+        // ResourceKey<Level> no longer exposes location() in this toolchain; toString() is stable and compilable.
+        String key = level.dimension().toString() + ":" + strikePos.asLong();
+        if (!strikeKeysThisTick.add(key)) {
+            return; // already processed a strike at this position in this tick
+        }
+
+        BlockPos rodPos = null;
+        if (isLightningRod(level.getBlockState(strikePos))) {
+            rodPos = strikePos;
+        } else if (isLightningRod(level.getBlockState(strikePos.below()))) {
+            rodPos = strikePos.below();
+        }
+
+        if (rodPos != null) {
+            distributeEnergy(level, rodPos);
         }
     }
 
@@ -67,9 +72,9 @@ public class LightningEnergyEvents {
     }
 
     private static void distributeEnergy(Level level, BlockPos rodPos) {
-        int remaining = FE_PER_STRIKE;
-        int totalAccepted = 0;
-        int[] acceptedPerSide = new int[6];
+        long remaining = FE_PER_STRIKE;
+        long totalAccepted = 0L;
+        long[] acceptedPerSide = new long[6];
 
         Direction[] directions = Direction.values();
         for (int i = 0; i < directions.length; i++) {
@@ -78,13 +83,26 @@ public class LightningEnergyEvents {
 
             BlockPos neighborPos = rodPos.relative(dir);
             BlockEntity be = level.getBlockEntity(neighborPos);
-            if (be != null) {
-                IEnergyStorage energyStorage = level.getCapability(Capabilities.EnergyStorage.BLOCK, neighborPos, level.getBlockState(neighborPos), be, dir.getOpposite());
-                if (energyStorage != null) {
-                    int accepted = energyStorage.receiveEnergy(remaining, false);
-                    remaining -= accepted;
-                    totalAccepted += accepted;
-                    acceptedPerSide[i] = accepted;
+            if (be == null) continue;
+
+            EnergyHandler handler = level.getCapability(
+                    Capabilities.Energy.BLOCK,
+                    neighborPos,
+                    level.getBlockState(neighborPos),
+                    be,
+                    dir.getOpposite()
+            );
+
+            if (handler == null) continue;
+
+            // Transfer API uses transactions. Insert only what the neighbour accepts.
+            try (var tx = Transaction.openRoot()) {
+                long inserted = handler.insert((int) remaining, tx);
+                if (inserted > 0) {
+                    tx.commit();
+                    remaining -= inserted;
+                    totalAccepted += inserted;
+                    acceptedPerSide[i] = inserted;
                 }
             }
         }
